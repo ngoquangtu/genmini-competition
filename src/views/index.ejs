@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Story</title>
+</head>
+<body>
+    <h1>Generate Story</h1>
+    <form action="/" method="post">
+        <label for="inputText" type="text">Input Text:</label>
+        <textarea id="inputText" name="inputText" rows="4" cols="50"></textarea><br>
+        <button type="submit">Generate Story</button>
+    </form>
+
+    <% if (generatedStory) { %>
+        <h2>Generated Story:</h2>
+        <p><%= generatedStory %></p>
+    <% } %>
+</body>
+</html>
