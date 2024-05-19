@@ -11,20 +11,43 @@ class Gemini {
       topP: 0.1,
       topK: 16,
     };
+    this.history=[];
   }
 
-  async  generateStory(prompt) {
+  async generateStory(prompt, onChunk) {
     try {
-      const model = this.genAI.getGenerativeModel({ model: "gemini-pro" });
-      const result = await model.generateContent(prompt,this.generationConfig);
-      console.log("Result object:", JSON.stringify(result, null, 2));
+      const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+      const chat = model.startChat({
+        history :this.history,
+        generationConfig:this.generationConfig
+      });
+      let result=await chat.sendMessageStream(prompt);
+      //  result = await model.generateContentStream(prompt, this.generationConfig);
 
-      const text = result.response?.candidates[0]?.content?.parts[0]?.text || "No generated text found";
 
-      return text;
+
+      for await (const chunk of result.stream) {
+        const chunkText = chunk.text();
+        console.log(chunkText);
+        onChunk(chunkText); // Call the callback with the chunk text
+      }
+        console.log('aggregated response: ', JSON.stringify(result.response));
+        fetch('localhost:3000/', {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(result.response)
+  })
+    .then(response => response.json())
+    .then(data => console.log(data))
+    .catch(error => console.error('Error:', error));
+      // this.history.push(
+      //   { role: "user", parts: [{ text: prompt }] },
+      //   { role: "model", parts: [{ text: result.candidates[0].content.parts[0].text }] }
+      // );
     } catch (error) {
-      // Handle errors and re-throw for handling in the route
-      console.error(error);
+      console.error("Error generating story:", error);
       throw error;
     }
   }

@@ -1,49 +1,48 @@
-const fs = require("fs");
+
 const path = require("path");
 require("dotenv").config();
-
-const Gemini = require("../src/public/gemini.js");
+const socketIo = require("socket.io");
+const Gemini = require("../src/public/gemini.js"); // Adjust the path if needed
 const express = require("express");
 const http = require("http");
 const bodyParser = require("body-parser");
 
 const app = express();
 const server = http.createServer(app);
+const io = socketIo(server);
 
 app.set("view engine", "ejs");
-app.set("views", __dirname + "/views");
+app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3000;
 
 const gemini = new Gemini();
 
-// Route for the homepage
 app.get("/", (req, res) => {
-  var generatedStory = "";
-  res.render("index", { generatedStory });
+  res.render("index", { generatedStory: "" });
 });
 
-// Route to handle POST requests from the form
-app.post("/", async (req, res) => {
-  try {
-    // Get input text from the request body
-    const { inputText } = req.body;
+io.on("connection", (socket) => {
+  console.log("Client connected");
 
-    // Generate story using gemini object
-    const generatedStory = await gemini.generateStory(inputText);
-    if (!generatedStory) {
-      throw new Error("Failed to generate story");
+  socket.on("generateStory", async (prompt) => {
+    try {
+      await gemini.generateStory(prompt, (chunkText) => {
+        socket.emit("storyChunk", chunkText);
+      });
+      socket.emit("storyEnd");
+    } catch (error) {
+      console.error(error);
+      socket.emit("error", "An error occurred while generating the story. Please try again later.");
     }
+  });
 
-    // Render the index page with the generated story
-    res.render("index", { generatedStory });
-  } catch (error) {
-    console.error(error);
-    // Provide a more informative error message to the user
-    res.status(500).send("An error occurred while generating the story. Please try again later.");
-  }
+  socket.on("disconnect", () => {
+    console.log("Client disconnected");
+  });
 });
 
 server.listen(PORT, () => {
