@@ -4,7 +4,9 @@
   "description": "gemini api app using node.jsjs",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build" : "node src/index.js",
+    "start": "node src/index.js"
   },
   "author": "ngoquangtu",
   "license": "ISC",
