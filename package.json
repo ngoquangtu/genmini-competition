@@ -5,13 +5,14 @@
   "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build" : "node src/index.js",
+    "build": "node src/index.js",
     "start": "node src/index.js"
   },
   "author": "ngoquangtu",
   "license": "ISC",
   "dependencies": {
     "@google/generative-ai": "^0.11.2",
+    "axios": "^1.7.2",
     "body-parser": "^1.20.2",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
@@ -19,6 +20,7 @@
     "fs": "^0.0.1-security",
     "nodemon": "^3.1.0",
     "path": "^0.12.7",
+    "routes": "^2.1.0",
     "socket.io": "^4.7.5"
   }
 }

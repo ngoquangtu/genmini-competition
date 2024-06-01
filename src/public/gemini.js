@@ -31,7 +31,6 @@ class Gemini {
         console.log(chunkText);
         onChunk(chunkText); // Call the callback with the chunk text
       }
-        console.log('aggregated response: ', JSON.stringify(result.response));
         fetch('localhost:3000/', {
     method: 'GET',
     headers: {
