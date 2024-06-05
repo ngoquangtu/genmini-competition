@@ -27,7 +27,7 @@ class GeminiModel {
         onChunk(chunkText); // Call the callback with the chunk text
       }
 
-      fetch('http://localhost:3000/', {
+      fetch('http://localhost:8000/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -35,7 +35,6 @@ class GeminiModel {
         body: JSON.stringify(result.response)
       })
         .then(response => response.json())
-        .then(data => console.log(data))
         .catch(error => console.error('Error:', error));
 
       // Update the history
