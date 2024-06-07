@@ -6,29 +6,25 @@ class Gemini {
     this.genAI = new GoogleGenerativeAI(process.env.API_KEY);
     this.generationConfig = {
       stopSequences: ["red"],
-      maxOutputTokens: 2000,
-      temperature: 0.9,
-      topP: 0.1,
-      topK: 16,
+      maxOutputTokens: process.env.MAX_OUTPUT_TOKEN,
+      temperature: process.env.TEMPERATURE,
+      topP: process.env.TOP_P,
+      topK: process.env.TOP_K,
     };
     this.history=[];
   }
 
   async generateStory(prompt, onChunk) {
     try {
-      const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+      const model = this.genAI.getGenerativeModel({ model: process.env.GENMINI_MODEL });
       const chat = model.startChat({
         history :this.history,
         generationConfig:this.generationConfig
       });
       let result=await chat.sendMessageStream(prompt);
-      //  result = await model.generateContentStream(prompt, this.generationConfig);
-
-
 
       for await (const chunk of result.stream) {
         const chunkText = chunk.text();
-        console.log(chunkText);
         onChunk(chunkText); // Call the callback with the chunk text
       }
         fetch('localhost:3000/', {

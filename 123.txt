@@ -1,0 +1,45 @@
+const express = require('express');
+const bodyParser = require('body-parser');
+const gemini = require('./public/genmini-api');
+const http = require('http');
+const cors = require('cors');
+const WebSocket = require('ws');
+require("dotenv").config();
+
+const app = express();
+const port = process.env.PORT || 3000;
+const server = http.createServer(app);
+
+const ws = new WebSocket.Server({server});
+
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use('/api', gemini);
+
+ws.on ('connection', (socket) => {
+    console.log('Client connected');
+    socket.on('message',async  (message) => {
+      const { prompt } = JSON.parse(message);
+      if (prompt) {
+        try {
+          await controller.generateStory(prompt, (chunk) => {
+            socket.send(chunk);
+          });
+        } catch (error) {
+          socket.send(`Error: ${error.message}`);
+        }
+      } else {
+        ws.send('Error: No prompt provided');
+      }
+    });
+
+    socket.on('close', () => {
+  console.log('Client disconnected');
+});
+});
+
+server.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});

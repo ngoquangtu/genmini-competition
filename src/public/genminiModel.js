@@ -1,47 +1,36 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-
+require("dotenv").config();
 class GeminiModel {
   constructor(apiKey) {
     this.genAI = new GoogleGenerativeAI(apiKey);
     this.generationConfig = {
       stopSequences: ["red"],
-      maxOutputTokens: 2000,
-      temperature: 0.9,
-      topP: 0.1,
-      topK: 16,
+      maxOutputTokens: process.env.MAX_OUTPUT_TOKEN,
+      temperature: process.env.TEMPERATURE,
+      topP: process.env.TOP_P,
+      topK:process.env.TOP_K,
     };
     this.history = [];
   }
 
   async generateStory(prompt, onChunk) {
     try {
-      const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+      const model = this.genAI.getGenerativeModel({ model: process.env.GENMINI_MODEL });
       const chat = model.startChat({
         history: this.history,
         generationConfig: this.generationConfig
       });
       let result = await chat.sendMessageStream(prompt);
-
+      // for await (const item of result.stream) {
+      //   console.log(item.candidates[0].content.parts[0].text);
+      // }
+      // const response = await result.response;
+      // console.log('aggregated response: ', JSON.stringify(response));
       for await (const chunk of result.stream) {
+        // let chunkText = chunk.candidates[0].content.parts[0].text;
         const chunkText = chunk.text();
-        onChunk(chunkText); // Call the callback with the chunk text
+        onChunk(chunkText);   
       }
-
-      fetch('http://localhost:8000/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(result.response)
-      })
-        .then(response => response.json())
-        .catch(error => console.error('Error:', error));
-
-      // Update the history
-      // this.history.push(
-      //   { role: "user", parts: [{ text: prompt }] },
-      //   { role: "model", parts: [{ text: result.candidates[0].content.parts[0].text }] }
-      // );
     } catch (error) {
       console.error("Error generating story:", error);
       throw error;

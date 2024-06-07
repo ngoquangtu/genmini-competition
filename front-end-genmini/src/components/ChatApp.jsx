@@ -1,24 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState,useRef } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlay, faCopy } from '@fortawesome/free-solid-svg-icons';
+import { faCopy, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const ChatApp = () => {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState([]);
-  const [isPromptEmpty, setIsPromptEmpty] = useState(true); // State để theo dõi nếu prompt trống
+  const [isPromptEmpty, setIsPromptEmpty] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const webSocket=useRef(null);
+
+  const copyIcon = copied ? (
+    <span title="Copied">
+      <FontAwesomeIcon icon={faCheck} /> Copied
+    </span>
+  ) : (
+    <span title="Copy">
+      <FontAwesomeIcon icon={faCopy} /> Copy
+    </span>
+  );
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
-    alert('Code copied to clipboard!');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 5000);
   };
 
   const handleChange = (e) => {
     const value = e.target.value;
     setPrompt(value);
-    setIsPromptEmpty(value.trim() === ''); 
+    setIsPromptEmpty(value.trim() === '');
   };
 
   const handleSubmit = async (e) => {
@@ -28,33 +43,56 @@ const ChatApp = () => {
       setLoading(false);
       return;
     }
+    if(webSocket.current)
+    {
+      webSocket.current.close();
+    }
+    webSocket.current=new WebSocket(`ws://localhost:8000`);
     if (prompt.trim()) {
       setMessages([...messages, { text: prompt, isUser: true }]);
       setPrompt('');
       setIsPromptEmpty(true);
 
       try {
-        setPrompt('');
-        const response = await axios.post('http://localhost:8000/api/generate-story', { prompt });
-        if (response.headers['content-type'] && response.headers['content-type'].includes('application/json')) {
-          const story = response.data.story;
-          // Ensure the returned code is wrapped in a Markdown code block
-          const formattedStory = `\`\`\`\n${story}\n\`\`\``;
-          setMessages((prevChatHistory) => [ ...prevChatHistory, { text: formattedStory, isUser: false }]);
-        } 
-      } catch(err) {
-        throw err;
+        webSocket.current.onopen = () => {
+          console.log('WebSocket connection opened');
+          webSocket.current.send(JSON.stringify({ prompt }));
+        };
+        // // const response = await axios.post('http://localhost:8000/api/generate-story', { prompt });
+        // if (response.headers['content-type'] && response.headers['content-type'].includes('application/json')) {
+        //   const story = response.data.story;
+        //   setMessages((prevChatHistory) => [
+        //     ...prevChatHistory,
+        //     { text: story.join(''), isUser: false },
+        //   ]);
+        // } else {
+        //   console.error('Response is not JSON');
+        // }
+        webSocket.current.onmessage = (event) => {
+          // const {story} = JSON.parse(event.data);
+          const story =event.data;
+          
+          setMessages((prevChatHistory) => [
+            ...prevChatHistory,
+            { text: story, isUser: false },
+          ]);
+          setLoading(false);
+        };
+        webSocket.current.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          setLoading(false);
+        };
+        webSocket.current.onclose = () => {
+          console.log('WebSocket connection closed');
+        };
+      } catch (err) {
+        console.error('Error generating story:', err);
       }
-      setLoading(false);
     }
   };
 
   return (
     <div style={styles.containerStyle}>
-      <header style={styles.headerStyle}>
-        <h1 style={styles.titleStyle}>ChatGPT</h1>
-        <button style={styles.buttonStyle}>New Chat</button>
-      </header>
       <main style={styles.mainStyle}>
         <div style={styles.messageContainerStyle}>
           {messages.map((msg, index) => (
@@ -63,35 +101,50 @@ const ChatApp = () => {
               style={{
                 ...styles.messageStyle,
                 alignSelf: msg.isUser ? 'flex-end' : 'flex-start',
-                backgroundColor: msg.isUser ? '#cbd5e1' : '#ebf4ff',
-                color: msg.isUser ? '#374151' : '#2563eb',
+                backgroundColor: msg.isUser ? '#7F9CF5' : '#F3F4F6',
+                color: msg.isUser ? '#FFFFFF' : '#374151',
               }}
             >
-              <p>
-                <ReactMarkdown>{msg.text}</ReactMarkdown> 
-              </p>
-              {
-                msg.isUser === 'false' && (
-                  <button
-                    onClick={() => copyToClipboard(msg.text.replace(/```/g, ''))}
-                    style={styles.copyButton}
-                  >
-                    <FontAwesomeIcon icon={faCopy} /> Copy Code
-                  </button>
-                )
-              }
+              <ReactMarkdown
+                components={{
+                  code({ node, inline, className, children, ...props }) {
+                    const match = /language-(\w+)/.exec(className || '');
+                    return !inline && match ? (
+                      <div style={ styles.containerCode}>
+                        <div style={styles.languageLabel}>{match[1]} </div>
+                        {!msg.isUser && (
+                            <button
+                            onClick={() => copyToClipboard(String(children).replace(/\n$/, ''))}
+                            style={styles.copyButton}>
+                                {copyIcon}
+                              </button>
+                        )}
+                        <SyntaxHighlighter 
+                        
+                          children={String(children).replace(/\n$/, '')}
+                          style={materialDark}
+                          language={match[1]}
+                          PreTag="div"
+                          {...props}
+                        />
+                      </div>
+                    ) : (
+                      <code className={className} {...props}>
+                        {children}
+                      </code>
+                    );
+                  },
+                }}
+              >
+                {msg.text}
+              </ReactMarkdown>
+             
             </div>
           ))}
           {loading && <p style={styles.botMessage}>AI is thinking...</p>}
         </div>
       </main>
       <footer style={styles.footerStyle}>
-        <img
-          aria-hidden="true"
-          alt="message icon"
-          src="../public/logo192.png"
-          style={styles.iconStyle}
-        />
         <input
           type="text"
           style={styles.inputStyle}
@@ -103,7 +156,6 @@ const ChatApp = () => {
           style={styles.sendButtonStyle}
           onClick={handleSubmit}
           disabled={isPromptEmpty}
-
         >
           Send
         </button>
@@ -117,26 +169,8 @@ const styles = {
     minHeight: '100vh',
     display: 'flex',
     flexDirection: 'column',
-    backgroundColor: '#f0f4f8',
+    backgroundColor: '#F9FAFB',
     color: '#374151',
-  },
-  headerStyle: {
-    backgroundColor: '#ffffff',
-    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-    padding: '1rem',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  titleStyle: {
-    fontSize: '1.5rem',
-    fontWeight: '700',
-  },
-  buttonStyle: {
-    backgroundColor: '#3b82f6',
-    color: '#ffffff',
-    padding: '0.5rem 1rem',
-    borderRadius: '0.375rem',
   },
   mainStyle: {
     flexGrow: '1',
@@ -153,56 +187,60 @@ const styles = {
   },
   messageStyle: {
     padding: '0.75rem',
-    borderRadius: '0.375rem',
+    borderRadius: '0.5rem',
     maxWidth: '20rem',
   },
   footerStyle: {
     padding: '1rem',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#F9FAFB',
     boxShadow: '0 -1px 2px 0 rgba(0, 0, 0, 0.05)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  iconStyle: {
-    width: '1.5rem',
-    height: '1.5rem',
-  },
   inputStyle: {
     flexGrow: '1',
     padding: '0.5rem',
-    border: '1px solid #e5e7eb',
-    borderRadius: '0.375rem',
+    border: '1px solid #E5E7EB ',
+    borderRadius: '0.5rem',
     outline: 'none',
     transition: 'border-color 0.15s ease-in-out',
   },
   sendButtonStyle: {
-    backgroundColor: '#3b82f6',
-    color: '#ffffff',
+    backgroundColor: '#7F9CF5',
+    color: '#FFFFFF',
     padding: '0.5rem 1rem',
-    borderRadius: '0.375rem',
+    borderRadius: '0.5rem',
+    marginLeft: '1rem',
+    cursor: 'pointer',
   },
   copyButton: {
-    marginTop: '10px',
-    backgroundColor: '#007bff',
-    color: '#fff',
+    backgroundColor: '#4B5563',
+    color: '#FFFFFF',
     border: 'none',
-    borderRadius: '5px',
-    padding: '5px 10px',
+    borderRadius: '0.5rem',
+    padding: '0.5rem 1rem',
     cursor: 'pointer',
   },
   botMessage: {
-    backgroundColor: '#007bff',
-    color: '#fff',
-    padding: '10px',
-    borderRadius: '10px',
+    backgroundColor: '#7F9CF5',
+    color: '#FFFFFF',
+    padding: '0.75rem',
+    borderRadius: '0.5rem',
     textAlign: 'left',
     marginBottom: '10px',
-    maxWidth: '100%',
     alignSelf: 'flex-start',
-    wordWrap: 'break-word', // Ensure long words break and wrap
-    whiteSpace: 'pre-wrap', // Preserve white space and wrap text
-},
+    wordWrap: 'break-word',
+    whiteSpace: 'pre-wrap',
+  },
+  languageLabel: {
+    backgroundColor: '#4B5563',
+    color: '#FFFFFF',
+    padding: '0.25rem 0.5rem',
+    borderRadius: '0.25rem',
+    marginBottom: '0.5rem',
+    display: 'inline-block',
+  },
 };
 
 export default ChatApp;

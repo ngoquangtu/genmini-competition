@@ -4,8 +4,8 @@ import Home from './components/Home';
 import NavBar from './components/Navbar';
 import Footer from './components/Footer';
 import FeedBack from './components/FeedBack';
-import ChatBot from './components/ChatBot';
 import ChatApp from './components/ChatApp';
+import TextStream from './components/TextStream';
 function App() {
     return (
       <Router>
@@ -13,9 +13,9 @@ function App() {
               <NavBar/>
                 <Routes>
                     <Route path="/" element={<Home />} />
-                    <Route path="/chat" element={<ChatBot/>} />
+                    <Route path="/chat" element={<ChatApp/>} />
                     <Route path="/report" element={<FeedBack/>} />
-                    <Route path="/chat1" element={<ChatApp/>} />
+                    <Route path="/stream" element={<TextStream/>} />
                 </Routes>
 
             </div>

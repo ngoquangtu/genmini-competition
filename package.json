@@ -24,6 +24,7 @@
     "react-markdown": "^9.0.1",
     "routes": "^2.1.0",
     "socket.io": "^4.7.5",
-    "socket.io-client": "^4.7.5"
+    "socket.io-client": "^4.7.5",
+    "ws": "^8.17.0"
   }
 }
