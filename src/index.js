@@ -1,6 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const gemini = require('./public/genmini-api');
+const { wsServer } = require('./public/genmini-api');
 const http = require('http');
 const cors = require('cors');
 require("dotenv").config();
@@ -8,7 +8,7 @@ require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 3000;
 const server = http.createServer(app);
-const { wsServer } = require('./public/genmini-api');
+
 
 app.use(cors());
 app.use(bodyParser.json());

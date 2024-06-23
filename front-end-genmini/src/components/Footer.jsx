@@ -6,7 +6,7 @@ function Footer() {
     footer: {
       backgroundColor: COLORS.darkBlue,
       color: COLORS.white,
-      padding: '1rem',
+      padding: '0.3rem',
       textAlign: 'center',
     },
     text: {

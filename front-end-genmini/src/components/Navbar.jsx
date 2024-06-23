@@ -20,7 +20,10 @@ function Navbar() {
     logo: {
       fontSize: '1.5rem',
       fontWeight: 'bold',
-      color: COLORS.white,
+      color: 'transparent',
+      backgroundImage: `linear-gradient(to right, ${COLORS.startColor}, ${COLORS.endColor})`,
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
       textDecoration: 'none',
     },
     links: {

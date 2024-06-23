@@ -13,24 +13,23 @@ class GeminiModel {
     this.history = [];
   }
 
-  async generateStory(prompt, onChunk) {
+  async generateStory(prompt,onChunk) {
     try {
       const model = this.genAI.getGenerativeModel({ model: process.env.GENMINI_MODEL });
       const chat = model.startChat({
         history: this.history,
         generationConfig: this.generationConfig
       });
+      let chunks=[];
       let result = await chat.sendMessageStream(prompt);
-      // for await (const item of result.stream) {
-      //   console.log(item.candidates[0].content.parts[0].text);
-      // }
-      // const response = await result.response;
-      // console.log('aggregated response: ', JSON.stringify(response));
       for await (const chunk of result.stream) {
         // let chunkText = chunk.candidates[0].content.parts[0].text;
         const chunkText = chunk.text();
-        onChunk(chunkText);   
+        chunks.push(chunkText);
+        onChunk(chunkText);
+
       }
+      return chunks.join(" ");
     } catch (error) {
       console.error("Error generating story:", error);
       throw error;

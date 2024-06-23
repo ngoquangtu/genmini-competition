@@ -1,18 +1,19 @@
-const GeminiModel = require('../public/genminiModel');
-require("dotenv").config();
+  const GeminiModel = require('../public/genminiModel'); 
+  require("dotenv").config();
 
-class GeminiController {
-  constructor() {
-    this.model = new GeminiModel(process.env.API_KEY);
-  }
+  class GeminiController {
+    constructor() {
+      this.geminiModel = new GeminiModel(process.env.API_KEY); 
+    }
 
-  async generateStory(prompt, onChunk) {
-    try {
-      await this.model.generateStory(prompt, onChunk);
-    } catch (error) {
-      throw error;
+    async generateStory(prompt, onChunk) {
+      try {
+      await this.geminiModel.generateStory(prompt,onChunk);
+        
+      } catch (error) {
+        throw error;
+      }
     }
   }
-}
 
-module.exports = GeminiController;
+  module.exports = GeminiController;
