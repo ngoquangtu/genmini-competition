@@ -43,6 +43,7 @@ const ChatApp = () => {
         
         if (type === 'chunk') {
           setCurrentStory((prev) => prev + data);
+          setLoading(false);
         } else if (type === 'full') {
           setLoading(false);
           setMessages((prevChatHistory) => [

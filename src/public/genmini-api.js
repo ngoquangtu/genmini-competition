@@ -12,9 +12,6 @@ const controller = new GeminiController();
       const { prompt } = JSON.parse(message);
       if (prompt) {
         try {
-          // await controller.generateStory(prompt, (chunk) => {
-          //   socket.send(chunk);
-          // });
 
           let fullStory = '';
         
@@ -23,7 +20,7 @@ const controller = new GeminiController();
             socket.send(JSON.stringify({ type: 'chunk', data: chunk }));
           });
   
-          socket.send(JSON.stringify({ type: 'full', data: fullStory }));
+         socket.send(JSON.stringify({ type: 'full', data: fullStory })); 
 
 
 

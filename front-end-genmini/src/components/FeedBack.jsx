@@ -19,9 +19,7 @@ function FeedbackForm() {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    // Gửi ý kiến phản hồi tới server ở đây (ví dụ: sử dụng API)
     console.log('Gửi ý kiến phản hồi:', feedback);
-    // Sau khi gửi, có thể xóa nội dung form hoặc hiển thị thông báo thành công
     setFeedback('');
   };
 
