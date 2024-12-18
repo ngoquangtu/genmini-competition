@@ -77,6 +77,17 @@ function Navbar() {
             Chat
           </Link>
           <Link
+            to="/audio"
+            style={{
+              ...styles.link,
+              ...(location.pathname === '/audio' ? styles.activeLink : {}),
+            }}
+            onMouseEnter={(e) => Object.assign(e.target.style, styles.hoverLink)}
+            onMouseLeave={(e) => Object.assign(e.target.style, styles.link, location.pathname === e.target.getAttribute('href') ? styles.activeLink : {})}
+          >
+            Audio Chat
+          </Link>
+          <Link
             to="/report"
             style={ {...styles.link,
                 ...(location.pathname === '/report' ? styles.activeLink : {}),}}

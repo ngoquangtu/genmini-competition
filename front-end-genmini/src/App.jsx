@@ -5,6 +5,7 @@ import NavBar from './components/Navbar';
 import Footer from './components/Footer';
 import FeedBack from './components/FeedBack';
 import ChatApp from './components/ChatApp';
+import AudioRecorder from './components/AudioRecorder';
 function App() {
     return (
       <Router>
@@ -14,6 +15,7 @@ function App() {
                     <Route path="/" element={<Home />} />
                     <Route path="/chat" element={<ChatApp/>} />
                     <Route path="/report" element={<FeedBack/>} />
+                    <Route path="/audio" element={<AudioRecorder/>} />
                 </Routes>
 
             </div>

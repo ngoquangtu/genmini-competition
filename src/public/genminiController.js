@@ -14,6 +14,16 @@
         throw error;
       }
     }
+    async generateAudio(audioFile) {
+      try {
+        // Gọi phương thức từ GeminiModel để xử lý âm thanh
+        const transcription = await this.geminiModel.generateAudio(audioFile);
+        return transcription;
+      } catch (error) {
+        console.error("Error in GeminiController.generateAudio:", error);
+        throw error;
+      }
+    }
   }
 
   module.exports = GeminiController;

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import MessageList from './MessageList';
 import ChatInput from './ChatInput';
-
+import Mic from './Mic';
 const ChatApp = () => {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,10 +17,8 @@ const ChatApp = () => {
     setIsPromptEmpty(value.trim() === '');
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    if (!prompt.trim()) {
+  const handlePromptSubmit = (message) => {
+    if (!message.trim()) {
       setLoading(false);
       return;
     }
@@ -28,45 +26,50 @@ const ChatApp = () => {
       webSocket.current.close();
     }
     webSocket.current = new WebSocket(`ws://localhost:8000`);
-
-    try {
-      webSocket.current.onopen = () => {
-        console.log('WebSocket connection opened');
-        webSocket.current.send(JSON.stringify({ prompt }));
-        setMessages([...messages, { text: prompt, isUser: true }]);
-        setPrompt('');
-        setIsPromptEmpty(true);
-      };
-
-      webSocket.current.onmessage = (event) => {
-        const { type, data } = JSON.parse(event.data);
-        
-        if (type === 'chunk') {
-          setCurrentStory((prev) => prev + data);
-          setLoading(false);
-        } else if (type === 'full') {
-          setLoading(false);
-          setMessages((prevChatHistory) => [
-            ...prevChatHistory,
-            { text: data, isUser: false },
-          ]);
-          setCurrentStory('');
-        }
-      };
-
-      webSocket.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
+  
+    webSocket.current.onopen = () => {
+      console.log('WebSocket connection opened');
+      webSocket.current.send(JSON.stringify({ prompt: message }));
+      setMessages([...messages, { text: message, isUser: true }]);
+      setPrompt('');
+      setIsPromptEmpty(true);
+    };
+  
+    webSocket.current.onmessage = (event) => {
+      const { type, data } = JSON.parse(event.data);
+  
+      if (type === 'chunk') {
+        setCurrentStory((prev) => prev + data);
         setLoading(false);
-      };
-
-      webSocket.current.onclose = () => {
-        console.log('WebSocket connection closed');
-      };
-    } catch (err) {
-      console.error('Error generating story:', err);
+      } else if (type === 'full') {
+        setLoading(false);
+        setMessages((prevChatHistory) => [
+          ...prevChatHistory,
+          { text: data, isUser: false },
+        ]);
+        setCurrentStory('');
+      }
+    };
+  
+    webSocket.current.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      setLoading(false);
+    };
+  
+    webSocket.current.onclose = () => {
+      console.log('WebSocket connection closed');
+    };
+  };
+  
+  const handleSubmit = (e) => {
+    if (typeof e === 'string') {
+      handlePromptSubmit(e);
+    } else {
+      e.preventDefault();
+      handlePromptSubmit(prompt);
     }
   };
-
+  
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();

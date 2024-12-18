@@ -1,6 +1,64 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMicrophone, faStop } from '@fortawesome/free-solid-svg-icons';
 
 const ChatInput = ({ prompt, handleChange, handleSubmit, isPromptEmpty }) => {
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunks = useRef([]);
+
+  // Ghi âm audio
+  const toggleRecording = async () => {
+    if (isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    } else {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorderRef.current = new MediaRecorder(stream);
+
+        mediaRecorderRef.current.ondataavailable = (event) => {
+          audioChunks.current.push(event.data);
+        };
+
+        mediaRecorderRef.current.onstop = async () => {
+          const audioBlob = new Blob(audioChunks.current, { type: 'audio/wav' });
+          audioChunks.current = [];
+          const url = URL.createObjectURL(audioBlob);
+          uploadAudio(audioBlob);
+        };
+        mediaRecorderRef.current.start();
+        setIsRecording(true);
+      } catch (error) {
+        console.error('Microphone access error:', error);
+      }
+    }
+  };
+  const stopRecording = () => {
+    mediaRecorderRef.current.stop();
+    setIsRecording(false);
+  };
+
+
+  // Gửi audio về backend
+  const uploadAudio = async (audioBlob) => {
+    const formData = new FormData();
+    formData.append('file', audioBlob, 'recording.wav');
+
+    try {
+      const response = await fetch('http://localhost:8000/api/speech-to-text', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      console.log('Transcription:', data.text);
+      handleSubmit(data.text);
+      
+    } catch (error) {
+      console.error('Error uploading audio:', error);
+    }
+  };
+
   return (
     <footer style={styles.footerStyle}>
       <input
@@ -12,10 +70,25 @@ const ChatInput = ({ prompt, handleChange, handleSubmit, isPromptEmpty }) => {
       />
       <button
         style={styles.sendButtonStyle}
-        onClick={handleSubmit}
+        onClick={() => handleSubmit(prompt)}
         disabled={isPromptEmpty}
       >
         Send
+      </button>
+
+      {/* Nút ghi âm với icon microphone */}
+      <button
+        onClick={toggleRecording}
+        style={{
+          backgroundColor: isRecording ? 'red' : '#FFEB3B',
+          color: '#FFFFFF',
+          padding: '0.3rem',
+          marginLeft: '1rem',
+          border: 'none',
+          borderRadius: '100%',
+        }}
+      >
+        <FontAwesomeIcon icon={isRecording ? faStop : faMicrophone} size="2x" />
       </button>
     </footer>
   );
@@ -33,7 +106,7 @@ const styles = {
   inputStyle: {
     flexGrow: '1',
     padding: '0.5rem',
-    border: '1px solid #E5E7EB ',
+    border: '1px solid #E5E7EB',
     borderRadius: '0.5rem',
     outline: 'none',
     transition: 'border-color 0.15s ease-in-out',

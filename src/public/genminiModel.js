@@ -32,6 +32,33 @@ class GeminiModel {
       throw error;
     }
   }
+  async generateAudio(file) {
+    try {
+      const response = await this.genAI.transcribeAudio({
+        audio: file, // Đầu vào là tệp âm thanh
+        config: {
+          languageCode: "en-US", // Ngôn ngữ
+          encoding: "LINEAR16", // Định dạng file
+          sampleRateHertz: 16000, // Tần số mẫu
+        },
+      });
+  
+      if (response && response.results) {
+        // Trích xuất kết quả từ phản hồi
+        const transcription = response.results
+          .map((result) => result.alternatives[0].transcript)
+          .join(" ");
+        console.log("Transcription:", transcription);
+        return transcription;
+      } else {
+        throw new Error("No transcription results available.");
+      }
+    } catch (error) {
+      console.error("Error generating audio transcription:", error.message);
+      throw error;
+    }
+  }
+  
 }
 
 module.exports = GeminiModel;
